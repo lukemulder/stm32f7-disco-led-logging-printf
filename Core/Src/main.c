@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#define LOG_LEVEL_INFO
+#define SET_LOG_LEVEL_INFO
 #include "logging.h"
 /* USER CODE END Includes */
 
@@ -47,7 +47,7 @@ UART_HandleTypeDef huart1;
 
 osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
-uint32_t tDelay = 300;
+uint32_t tDelay = 1000;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

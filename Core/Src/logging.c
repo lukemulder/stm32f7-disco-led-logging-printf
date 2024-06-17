@@ -8,35 +8,35 @@
 
 #include "logging.h"
 
-#ifdef __GNUC__
-  #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif /* __GNUC__ */
-
-PUTCHAR_PROTOTYPE
-{
-  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
-  return ch;
-}
+static char log_msg[LOG_MSG_BUFFER_SIZE];
 
 void logging(const char *file, int line, const char *func, LogLevel_e level, const char *log_str, ...) {
+  if (level == LOG_LEVEL_NONE) return;
+
   va_list args;
   va_start(args, log_str);
 
   const char* level_str = "";
   switch(level) {
-      case LOGLEVEL_ERROR: level_str = ERROR_STR; break;
-      case LOGLEVEL_WARNING: level_str = WARNING_STR; break;
-      case LOGLEVEL_INFO: level_str = INFO_STR; break;
+      case LOG_LEVEL_ERROR: level_str = ERROR_STR; break;
+      case LOG_LEVEL_WARNING: level_str = WARNING_STR; break;
+      case LOG_LEVEL_INFO: level_str = INFO_STR; break;
       default: level_str = NONE_STR; break;
   }
 
-  if(level != LOGLEVEL_NONE) {
-      printf("[%s] %s:%d %s() - ", level_str, file, line, func);
-      vprintf(log_str, args);
-      printf("\r\n");
+  int offset = snprintf(log_msg, sizeof(log_msg), "[%s] %s:%d %s() - ", level_str, file, line, func);
+  if (offset < 0 || offset >= sizeof(log_msg)) {
+      va_end(args);
+      return;
   }
 
-  va_end(args);
+  int needed = vsnprintf(log_msg + offset, sizeof(log_msg) - offset, log_str, args);
+  if (needed < 0 || needed >= (int)(sizeof(log_msg) - offset)) {
+      va_end(args);
+      return;
+  }
+
+  strncat(log_msg, "\r\n", sizeof(log_msg) - strlen(log_msg) - 1);
+
+  HAL_UART_Transmit(&huart1, (uint8_t*)log_msg, strlen(log_msg), 0xFFFF);
 }

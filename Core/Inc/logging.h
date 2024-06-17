@@ -40,16 +40,17 @@
 #include <stdarg.h>
 #include "stm32f7xx_hal.h"
 
-#define LOG_BUFFER_SIZE 256  // Define an appropriate size for your log messages
 extern UART_HandleTypeDef huart1;
+
+#define LOG_MSG_BUFFER_SIZE 256
 
 #define LOGGING_ENABLED 1
 
 typedef enum {
-  LOGLEVEL_NONE = 0,
-  LOGLEVEL_ERROR,
-  LOGLEVEL_WARNING,
-  LOGLEVEL_INFO,
+  LOG_LEVEL_NONE = 0,
+  LOG_LEVEL_ERROR,
+  LOG_LEVEL_WARNING,
+  LOG_LEVEL_INFO,
   LOG_LEVEL_MAX
 } LogLevel_e;
 
@@ -72,16 +73,16 @@ typedef enum {
 #define LOG_LEVEL_SETTING_WARNING 2
 #define LOG_LEVEL_SETTING_INFO    3
 
-#ifdef LOG_LEVEL_NONE
+#ifdef SET_LOG_LEVEL_NONE
   #define LOG_LEVEL LOG_LEVEL_SETTING_NONE
 #endif
-#ifdef LOG_LEVEL_ERROR
+#ifdef SET_LOG_LEVEL_ERROR
   #define LOG_LEVEL LOG_LEVEL_SETTING_ERROR
 #endif
-#ifdef LOG_LEVEL_WARNING
+#ifdef SET_LOG_LEVEL_WARNING
   #define LOG_LEVEL LOG_LEVEL_SETTING_WARNING
 #endif
-#ifdef LOG_LEVEL_INFO
+#ifdef SET_LOG_LEVEL_INFO
   #define LOG_LEVEL LOG_LEVEL_SETTING_INFO
 #endif
 
@@ -89,19 +90,19 @@ void logging(const char *file, int line, const char *func, LogLevel_e level, con
 
 #ifdef LOGGING_ENABLED
   #if LOG_LEVEL >= LOG_LEVEL_SETTING_ERROR
-    #define LOG_ERROR(log_str, ...) logging(__FILE__, __LINE__, __func__, ERROR, log_str, ##__VA_ARGS__)
+    #define LOG_ERROR(log_str, ...) logging(__FILE__, __LINE__, __func__, LOG_LEVEL_ERROR, log_str, ##__VA_ARGS__)
   #else
     #define LOG_ERROR(log_str, ...)
   #endif
 
   #if LOG_LEVEL >= LOG_LEVEL_SETTING_WARNING
-    #define LOG_WARNING(log_str, ...) logging(__FILE__, __LINE__, __func__, WARNING, log_str, ##__VA_ARGS__)
+    #define LOG_WARNING(log_str, ...) logging(__FILE__, __LINE__, __func__, LOG_LEVEL_WARNING, log_str, ##__VA_ARGS__)
   #else
     #define LOG_WARNING(log_str, ...)
   #endif
 
-  #if LOG_INFO >= LOG_LEVEL_SETTING_INFO
-    #define LOG_INFO(log_str, ...) logging(__FILE__, __LINE__, __func__, INFO, log_str, ##__VA_ARGS__)
+  #if LOG_LEVEL >= LOG_LEVEL_SETTING_INFO
+    #define LOG_INFO(log_str, ...) logging(__FILE__, __LINE__, __func__, LOG_LEVEL_INFO, log_str, ##__VA_ARGS__)
   #else
     #define LOG_INFO(log_str, ...)
   #endif
