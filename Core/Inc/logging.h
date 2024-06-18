@@ -39,12 +39,21 @@
 #include <string.h>
 #include <stdarg.h>
 #include "stm32f7xx_hal.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "queue.h"
+
+#define LOGGING_ENABLED 1
+
+#define LOG_TASK_PRIORITY (tskIDLE_PRIORITY + 1)
 
 extern UART_HandleTypeDef huart1;
 
-#define LOG_MSG_BUFFER_SIZE 256
+extern xSemaphoreHandle logMutex;
 
-#define LOGGING_ENABLED 1
+#define LOG_MSG_BUFFER_SIZE 256
+extern char log_msg[LOG_MSG_BUFFER_SIZE];
 
 typedef enum {
   LOG_LEVEL_NONE = 0,
@@ -111,5 +120,7 @@ void logging(const char *file, int line, const char *func, LogLevel_e level, con
   #define LOG_WARNING(log_str, ...)
   #define LOG_INFO(log_str, ...)
 #endif // LOGGING_ENABLED
+
+void logTask(void *pvParameters);
 
 #endif // _LOGGING_H_

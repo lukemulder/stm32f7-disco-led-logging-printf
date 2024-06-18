@@ -122,6 +122,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  xTaskCreate(logTask, "LogTask", configMINIMAL_STACK_SIZE, NULL, LOG_TASK_PRIORITY, NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -422,8 +423,10 @@ void StartDefaultTask(void const * argument)
   {
     HAL_GPIO_TogglePin(GPIOI, GPIO_PIN_1);
     LOG_INFO("Hello World!");
-    osDelay(tDelay);
+    vTaskDelay(pdMS_TO_TICKS(tDelay));
   }
+
+  vTaskDelete(NULL);
   /* USER CODE END 5 */
 }
 
