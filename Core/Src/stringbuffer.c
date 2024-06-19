@@ -17,11 +17,11 @@ int is_power_of_two(size_t value) {
     return value != 0 && (value & (value - 1)) == 0;
 }
 
-int str_buf_init_custom_size(StringBuffer *sb, size_t sb_size, size_t str_max_len)
+int str_buf_init_custom_size(StringBuffer *sb, size_t buf_size, size_t str_size)
 {
   // String buffer size MUST be a power of 2
   // Otherwise overflow optimizations will not work in push/pop
-  if(!is_power_of_two(sb_size) || str_max_len > STRING_BUFFER_MAX_LENGTH )
+  if(!is_power_of_two(buf_size) || str_size > STRING_BUFFER_MAX_LENGTH )
   {
     return -1;
   }
@@ -29,22 +29,24 @@ int str_buf_init_custom_size(StringBuffer *sb, size_t sb_size, size_t str_max_le
   sb->head = 0;
   sb->tail = 0;
   sb->count = 0;
-  sb->size = sb_size;
-  sb->str_len = str_max_len;
+  sb->buf_size = buf_size;
+  sb->str_size = str_size;
 
-  sb->buf = (char**)malloc(sizeof(char*) * sb_size);
+  sb->buf = (char**)malloc(sizeof(char*) * sb->buf_size);
 
   if(sb->buf == NULL)
   {
     return -1;
   }
 
-  for(int i = 0; i < sb_size; i++)
+  // Memory allocation for buffer string
+  for(int i = 0; i < sb->buf_size; i++)
   {
-    sb->buf[i] = (char*)malloc(sizeof(char) * str_max_len);
+    sb->buf[i] = (char*)malloc(sizeof(char) * sb->str_size);
 
     if(sb->buf[i] == NULL)
     {
+      // If failed to allocate buffer entry return previously allocated
       while(i-- > 0)
       {
           free(sb->buf[i]);
@@ -65,7 +67,8 @@ int str_buf_init(StringBuffer *sb)
 
 int str_buf_free(StringBuffer *sb)
 {
-  for(int i = 0; i < sb->size; i++)
+  // Deallocate all buffer memory on the heap
+  for(int i = 0; i < sb->buf_size; i++)
   {
     free(sb->buf[i]);
   }
@@ -81,18 +84,18 @@ int str_buf_push(StringBuffer *sb, const char* str) {
     return -1;
   }
 
-  strncpy(sb->buf[sb->head], str, sb->str_len - 1);
-  sb->buf[sb->head][sb->str_len - 1] = '\0';
+  strncpy(sb->buf[sb->head], str, sb->str_size - 1);
+  sb->buf[sb->head][sb->str_size - 1] = '\0';
 
   // Again the size MUST be a power of 2 to avoid modulus
-  sb->head = (sb->head + 1) & (sb->size - 1);
+  sb->head = (sb->head + 1) & (sb->buf_size - 1);
 
   // if head overwrites tail
   if(sb->head == sb->tail)
-    sb->tail = (sb->tail + 1) & (sb->size - 1);
+    sb->tail = (sb->tail + 1) & (sb->buf_size - 1);
 
   // Size is the max count
-  if(sb->count < sb->size)
+  if(sb->count < sb->buf_size)
     sb->count++;
 
   return 0;
@@ -104,6 +107,7 @@ int str_buf_pop(StringBuffer *sb, char** str_container) {
     return -1;
   }
 
+  // If empty place NULL data but don't fail
   if(sb->count == 0)
   {
     *str_container = NULL;
@@ -112,7 +116,7 @@ int str_buf_pop(StringBuffer *sb, char** str_container) {
 
   *str_container = sb->buf[sb->tail];
 
-  sb->tail = (sb->tail + 1) & (sb->size - 1);
+  sb->tail = (sb->tail + 1) & (sb->buf_size - 1);
   sb->count--;
 
   return 0;
@@ -121,4 +125,9 @@ int str_buf_pop(StringBuffer *sb, char** str_container) {
 size_t str_buff_count(StringBuffer *sb)
 {
   return sb->count;
+}
+
+size_t str_buff_max_str_len(StringBuffer *sb)
+{
+  return sb->str_size;
 }

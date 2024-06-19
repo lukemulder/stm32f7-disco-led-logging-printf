@@ -67,6 +67,9 @@ void logTask(void *pvParameters)
  * are similar to printf, allowing for flexible message composition. This function
  * is responsible for formatting the log message and queuing it in the log buffer.
  *
+ * Call: LOG_INFO("Hello World!");
+ * Outp: "[INFO] Core/Src/main.c:425 StartDefaultTask() - Hello World!"
+ * 
  * @param file The source file name from which the log is generated.
  * @param line The line number in the source file at which the log is generated.
  * @param func The function name from which the log is generated.
@@ -78,32 +81,35 @@ void logging(const char *file, int line, const char *func, LogLevel_e level, con
 {
   if (level == LOG_LEVEL_NONE) return;
 
+  int offset, needed;
+
   char log_msg[LOG_MSG_BUFFER_SIZE];
   log_msg[LOG_MSG_BUFFER_SIZE - 1] = '\0';
-
-  va_list args;
-  va_start(args, log_str);
 
   const char* level_str = "";
   switch(level)
   {
-      case LOG_LEVEL_ERROR:   level_str = ERROR_STR;   break;
-      case LOG_LEVEL_WARNING: level_str = WARNING_STR; break;
-      case LOG_LEVEL_INFO:    level_str = INFO_STR;    break;
-      default:                level_str = NONE_STR;    break;
+      case LOG_LEVEL_ERROR:   level_str = "ERROR";   break;
+      case LOG_LEVEL_WARNING: level_str = "WARNING"; break;
+      case LOG_LEVEL_INFO:    level_str = "INFO";    break;
+      default:                level_str = "NONE";    break;
   }
 
-  int offset = snprintf(log_msg, sizeof(log_msg), "[%s] %s:%d %s() - ", level_str, file, line, func);
+  // Begin log message with [LEVEL] *.c:102 func() -
+  offset = snprintf(log_msg, sizeof(log_msg), "[%s] %s:%d %s() - ", level_str, file, line, func);
   if (offset < 0 || offset >= sizeof(log_msg))
   {
-      va_end(args);
       return;
   }
 
-  int needed = vsnprintf(log_msg + offset, sizeof(log_msg) - offset, log_str, args);
+  // Process the variable inputs for the log string
+  va_list args;
+  va_start(args, log_str);
+  needed = vsnprintf(log_msg + offset, sizeof(log_msg) - offset, log_str, args);
+  va_end(args);
+
   if (needed < 0 || needed >= (int)(sizeof(log_msg) - offset))
   {
-      va_end(args);
       return;
   }
 
@@ -112,6 +118,4 @@ void logging(const char *file, int line, const char *func, LogLevel_e level, con
   xSemaphoreTake(logMutex, portMAX_DELAY);
   str_buf_push(&log_buffer, log_msg);
   xSemaphoreGive(logMutex);
-
-  va_end(args);
 }

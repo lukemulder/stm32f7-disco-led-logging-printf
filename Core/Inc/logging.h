@@ -67,12 +67,6 @@ typedef enum {
   LOG_LEVEL_MAX
 } LogLevel_e;
 
-// Define string representations for log levels
-#define NONE_STR    "NONE"
-#define ERROR_STR   "ERROR"
-#define WARNING_STR "WARNING"
-#define INFO_STR    "INFO"
-
 // LOG LEVELS
 // Place these levels in your c file to specify the log level you wish to set
 // (From least to most verbose)

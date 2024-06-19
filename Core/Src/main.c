@@ -483,7 +483,6 @@ void assert_failed(uint8_t *file, uint32_t line)
   char file_name[128];
 
   // Copy the assert params locally
-  uint32_t line_num = line;
   strncpy(file_name, (char*)file, 128);
 
   // Spin on assert for debugger to inspect

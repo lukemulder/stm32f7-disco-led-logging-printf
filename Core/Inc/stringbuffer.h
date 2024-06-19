@@ -50,11 +50,11 @@ typedef struct {
     size_t head;
     size_t tail;
     size_t count;
-    size_t size;
-    size_t str_len;
+    size_t buf_size;
+    size_t str_size;
 } StringBuffer;
 
-int str_buf_init_custom_size(StringBuffer *sb, size_t sb_size, size_t str_max_len);
+int str_buf_init_custom_size(StringBuffer *sb, size_t buf_size, size_t str_size);
 int str_buf_init(StringBuffer *sb);
 int str_buf_free(StringBuffer *sb);
 
@@ -62,5 +62,6 @@ int str_buf_push(StringBuffer *sb, const char* data);
 int str_buf_pop(StringBuffer *sb, char** data);
 
 size_t str_buff_count(StringBuffer *sb);
+size_t str_buff_max_str_len(StringBuffer *sb);
 
 #endif // STRINGBUFFER_H
