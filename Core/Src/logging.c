@@ -13,12 +13,35 @@ static StringBuffer log_buffer;
 
 SemaphoreHandle_t logMutex;
 
-int loggingInit()
+/**
+ * Initializes the logging system by creating a mutex for protecting
+ * the logging buffer and initializing the string buffer used to store log messages.
+ * 
+ * @return int Returns 0 if the buffer is successfully initialized, or a non-zero
+ *             error code if initialization fails. The failure might be due to 
+ *             memory allocation issues or other initialization problems.
+ */
+void loggingInit()
 {
+  int error;
+
+  // Create mutex for log buffer protection
   logMutex = xSemaphoreCreateMutex();
-  str_buf_init_custom_size(&log_buffer, LOG_BUFFER_SIZE, LOG_MSG_BUFFER_SIZE);
+
+  // Initialize log buffer
+  error = str_buf_init_custom_size(&log_buffer, LOG_BUFFER_SIZE, LOG_MSG_BUFFER_SIZE);
+
+  assert_param(logMutex != NULL);
+  assert_param(error == 0);
 }
 
+/**
+ * Task function that continuously processes the log messages queued in the log buffer.
+ * It waits for messages to become available in the buffer, then transmits them over UART.
+ * This task should run indefinitely as long as the system is active.
+ *
+ * @param pvParameters Currently not used. Intended for future expansion if needed.
+ */
 void logTask(void *pvParameters)
 {
   char* next_log;
@@ -33,12 +56,24 @@ void logTask(void *pvParameters)
     }
     xSemaphoreGive(logMutex);
 
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(LOGGING_TASK_PERIOD_MS));
   }
 
   vTaskDelete(NULL);
 }
 
+/**
+ * Logs a message with a specified severity level. The message format and arguments
+ * are similar to printf, allowing for flexible message composition. This function
+ * is responsible for formatting the log message and queuing it in the log buffer.
+ *
+ * @param file The source file name from which the log is generated.
+ * @param line The line number in the source file at which the log is generated.
+ * @param func The function name from which the log is generated.
+ * @param level The severity level of the log (e.g., ERROR, WARNING, INFO).
+ * @param log_str The format string for the log message (similar to printf).
+ * @param ... Variable arguments providing values to fill the format string.
+ */
 void logging(const char *file, int line, const char *func, LogLevel_e level, const char *log_str, ...)
 {
   if (level == LOG_LEVEL_NONE) return;

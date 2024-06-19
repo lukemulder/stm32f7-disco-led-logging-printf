@@ -117,7 +117,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, LOG_TASK_PRIORITY + 1, 0, 1024);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -477,8 +477,17 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  // Prevent interrupts from obfuscating execution
+  taskDISABLE_INTERRUPTS();
+
+  char file_name[128];
+
+  // Copy the assert params locally
+  uint32_t line_num = line;
+  strncpy(file_name, (char*)file, 128);
+
+  // Spin on assert for debugger to inspect
+  while(1) {}
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
