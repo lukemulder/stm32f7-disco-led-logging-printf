@@ -43,6 +43,7 @@
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
+#include "stringbuffer.h"
 
 #define LOGGING_ENABLED 1
 
@@ -52,8 +53,8 @@ extern UART_HandleTypeDef huart1;
 
 extern xSemaphoreHandle logMutex;
 
-#define LOG_MSG_BUFFER_SIZE 256
-extern char log_msg[LOG_MSG_BUFFER_SIZE];
+#define LOG_MSG_BUFFER_SIZE 128
+#define LOG_BUFFER_SIZE 64
 
 typedef enum {
   LOG_LEVEL_NONE = 0,
@@ -121,6 +122,7 @@ void logging(const char *file, int line, const char *func, LogLevel_e level, con
   #define LOG_INFO(log_str, ...)
 #endif // LOGGING_ENABLED
 
+int loggingInit(void);
 void logTask(void *pvParameters);
 
 #endif // _LOGGING_H_

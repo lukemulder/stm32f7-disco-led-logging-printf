@@ -7,29 +7,33 @@
 ******************************************************************************/
 
 #include "logging.h"
+#include "stringbuffer.h"
 
-typedef struct {
-    char message[LOG_MSG_BUFFER_SIZE];
-} LogEntry;
+static StringBuffer log_buffer;
 
-static QueueHandle_t logQueue;
 SemaphoreHandle_t logMutex;
+
+int loggingInit()
+{
+  logMutex = xSemaphoreCreateMutex();
+  str_buf_init_custom_size(&log_buffer, LOG_BUFFER_SIZE, LOG_MSG_BUFFER_SIZE);
+}
 
 void logTask(void *pvParameters)
 {
-  LogEntry entry;
-
-  logMutex = xSemaphoreCreateMutex();
-  logQueue = xQueueCreate(10, sizeof(LogEntry));
+  char* next_log;
 
   for(;;)
   {
-    if (xQueueReceive(logQueue, &entry, portMAX_DELAY) == pdPASS) 
+    xSemaphoreTake(logMutex, portMAX_DELAY);
+    while(str_buff_count(&log_buffer) > 0)
     {
-      xSemaphoreTake(logMutex, portMAX_DELAY);
-      HAL_UART_Transmit(&huart1, (uint8_t*)entry.message, strlen(entry.message), 0xFFFF);
-      xSemaphoreGive(logMutex);
+      str_buf_pop(&log_buffer, &next_log);
+      HAL_UART_Transmit(&huart1, (uint8_t*)next_log, strlen(next_log), 0xFFFF);
     }
+    xSemaphoreGive(logMutex);
+
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
 
   vTaskDelete(NULL);
@@ -39,8 +43,8 @@ void logging(const char *file, int line, const char *func, LogLevel_e level, con
 {
   if (level == LOG_LEVEL_NONE) return;
 
-  LogEntry entry;
-  entry.message[LOG_MSG_BUFFER_SIZE - 1] = '\0';
+  char log_msg[LOG_MSG_BUFFER_SIZE];
+  log_msg[LOG_MSG_BUFFER_SIZE - 1] = '\0';
 
   va_list args;
   va_start(args, log_str);
@@ -54,21 +58,25 @@ void logging(const char *file, int line, const char *func, LogLevel_e level, con
       default:                level_str = NONE_STR;    break;
   }
 
-  int offset = snprintf(entry.message, sizeof(entry.message), "[%s] %s:%d %s() - ", level_str, file, line, func);
-  if (offset < 0 || offset >= sizeof(entry.message))
+  int offset = snprintf(log_msg, sizeof(log_msg), "[%s] %s:%d %s() - ", level_str, file, line, func);
+  if (offset < 0 || offset >= sizeof(log_msg))
   {
       va_end(args);
       return;
   }
 
-  int needed = vsnprintf(entry.message + offset, sizeof(entry.message) - offset, log_str, args);
-  if (needed < 0 || needed >= (int)(sizeof(entry.message) - offset))
+  int needed = vsnprintf(log_msg + offset, sizeof(log_msg) - offset, log_str, args);
+  if (needed < 0 || needed >= (int)(sizeof(log_msg) - offset))
   {
       va_end(args);
       return;
   }
 
-  strncat(entry.message, "\r\n", sizeof(entry.message) - strlen(entry.message) - 1);
+  strncat(log_msg, "\r\n", sizeof(log_msg) - strlen(log_msg) - 1);
 
-  xQueueSend(logQueue, &entry, portMAX_DELAY);
+  xSemaphoreTake(logMutex, portMAX_DELAY);
+  str_buf_push(&log_buffer, log_msg);
+  xSemaphoreGive(logMutex);
+
+  va_end(args);
 }

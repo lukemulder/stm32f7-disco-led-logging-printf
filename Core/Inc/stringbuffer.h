@@ -36,24 +36,31 @@
 *   - Advanced configuration options to tailor buffer behavior per application needs.
 *
 *****************************************************************************/
+#ifndef STRINGBUFFER_H
+#define STRINGBUFFER_H
 
 #include <stdint.h>
 #include <stdlib.h>
 
 #define STRING_BUFFER_SIZE 64
-#define STRING_MAX_LENGTH 128
+#define STRING_BUFFER_MAX_LENGTH 256
 
 typedef struct {
     char** buf;
-    uint16_t head;
-    uint16_t tail;
-    uint16_t full;
-    uint16_t size;
+    size_t head;
+    size_t tail;
+    size_t count;
+    size_t size;
+    size_t str_len;
 } StringBuffer;
 
-int str_buf_init(StringBuffer *sb, uint16_t sb_size, uint16_t str_max_len);
-void str_buf_init(StringBuffer *sb);
+int str_buf_init_custom_size(StringBuffer *sb, size_t sb_size, size_t str_max_len);
+int str_buf_init(StringBuffer *sb);
 int str_buf_free(StringBuffer *sb);
 
 int str_buf_push(StringBuffer *sb, const char* data);
 int str_buf_pop(StringBuffer *sb, char** data);
+
+size_t str_buff_count(StringBuffer *sb);
+
+#endif // STRINGBUFFER_H
